@@ -1,5 +1,5 @@
 // In-memory inbox and work orders. Restarting the server resets the demo.
-import { runAgent } from './agent.js';
+import { runAgent, SLA_HOURS } from './agent.js';
 
 // What a person can do next from each status. Nothing reaches a contractor before "approve".
 export const NEXT = {
@@ -26,12 +26,13 @@ export function createStore(register, { now = () => new Date(), ...agentOpts } =
   function act(id, action, { by = 'Property manager', edits = {}, note } = {}) {
     const item = items.get(id);
     if (!item) throw new Error('unknown mail');
-    const to = NEXT[item.status]?.[action];
+    const to = Object.hasOwn(NEXT, item.status) && Object.hasOwn(NEXT[item.status], action) ? NEXT[item.status][action] : null;
     if (!to) throw new Error(`cannot ${action} a ${item.status} item`);
     if (action === 'approve') {
       const allowed = ['unit', 'urgency', 'contractor', 'description', 'tenantReply'];
       for (const k of Object.keys(edits)) if (!allowed.includes(k)) throw new Error(`cannot edit ${k}`);
       if (edits.contractor && !register.contractors.some((c) => c.id === edits.contractor)) throw new Error('unknown contractor');
+      if (edits.urgency && !Object.hasOwn(SLA_HOURS, edits.urgency)) throw new Error('unknown urgency');
       const { unit: unitId, ...rest } = edits;
       if (!unitId && item.draft.location.startsWith('unknown')) throw new Error('set the unit before approving');
       if (unitId) {
@@ -42,6 +43,8 @@ export function createStore(register, { now = () => new Date(), ...agentOpts } =
         item.draft.location = `${prop.name}, unit ${unit.unit}, ${prop.city}`;
       }
       Object.assign(item.draft, rest);
+      // The deadline follows the urgency, counted from when the mail arrived.
+      if (rest.urgency) item.draft.due = new Date(new Date(item.mail.received).getTime() + SLA_HOURS[rest.urgency] * 3600_000).toISOString();
     }
     item.status = to;
     const contractor = item.draft && register.contractors.find((c) => c.id === item.draft.contractor);

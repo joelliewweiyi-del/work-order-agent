@@ -61,3 +61,18 @@ test('a unit the model invents is rejected and the sender decides the unit', asy
   assert.equal(r.unit.unit, '5C');
   assert.match(r.draft.flags.join(' '), /Unit: quote not found/);
 });
+
+test('a model that returns fields in the wrong shape does not crash the agent', async () => {
+  const odd = async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ isWorkOrder: true, trade: 'roofing', urgency: 'soon', fields: { unit: '5C' } }) } }] }) });
+  const r = await runAgent({ id: 'g', from: 'leo.fischer@example.com', subject: 'Tap', body: 'The kitchen tap drips.' },
+    register, { env: { XAI_API_KEY: 'k' }, fetchFn: odd, now: NOW });
+  assert.deepEqual([r.draft.trade, r.draft.urgency, r.unit.unit], ['general', 'urgent', '5C']);
+});
+
+test('a trade name that only exists on Object.prototype is not a trade', async () => {
+  const proto = async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ isWorkOrder: true, trade: 'constructor', urgency: 'routine', fields: [] }) } }] }) });
+  const r = await runAgent({ id: 'h', from: 'leo.fischer@example.com', subject: 'Tap', body: 'The kitchen tap drips.' },
+    register, { env: { XAI_API_KEY: 'k' }, fetchFn: proto, now: NOW });
+  assert.equal(r.draft.trade, 'general');
+  assert.equal(r.draft.contractor, 'allfix');
+});

@@ -1,5 +1,7 @@
 # work-order-agent
 
+[![test](https://github.com/joelliewweiyi-del/work-order-agent/actions/workflows/test.yml/badge.svg)](https://github.com/joelliewweiyi-del/work-order-agent/actions/workflows/test.yml)
+
 An agent that turns tenant mail into work orders. It reads the mail, quotes the unit, issue and urgency, picks a contractor and drafts the order and the reply. A person approves before anything goes out.
 
 ![work-order-agent demo](docs/demo.gif)

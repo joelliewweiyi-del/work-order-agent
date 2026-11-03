@@ -8,7 +8,9 @@
     "start": "node src/server.js",
     "test": "node --test"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "doc-trace": "github:joelliewweiyi-del/doc-trace"
   }

@@ -35,11 +35,12 @@ export async function triageWithLlm(mail, config, fetchFn = fetch) {
   });
   if (!res.ok) throw new Error(`LLM call failed: ${res.status} ${await res.text()}`);
   const out = JSON.parse((await res.json()).choices[0].message.content);
-  const byKey = new Map((out.fields ?? []).map((f) => [f.key, f]));
+  const list = Array.isArray(out.fields) ? out.fields.filter((f) => f && typeof f === 'object') : [];
+  const byKey = new Map(list.map((f) => [f.key, f]));
   const keys = out.isWorkOrder ? ['unit', 'issue', 'urgency'] : ['unit'];
   return {
     isWorkOrder: Boolean(out.isWorkOrder),
-    trade: out.isWorkOrder ? (out.trade in TRADES || out.trade === 'general' ? out.trade : 'general') : null,
+    trade: out.isWorkOrder ? (Object.hasOwn(TRADES, out.trade) || out.trade === 'general' ? out.trade : 'general') : null,
     urgency: out.isWorkOrder ? (LEVELS.includes(out.urgency) ? out.urgency : 'urgent') : null,
     fields: keys.map((key) => ({ key, value: byKey.get(key)?.value ?? null, page: 1, quote: byKey.get(key)?.quote ?? null })),
   };

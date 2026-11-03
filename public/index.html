@@ -89,7 +89,7 @@ function renderDetail() {
   const $d = document.getElementById('detail');
   if (!i) { $d.innerHTML = ''; return; }
   let body = esc(`${i.mail.subject}\n\n${i.mail.body}`);
-  i.fields.filter((f) => f.status === 'traced').forEach((f) => { body = body.replace(esc(f.quote), `<mark title="${f.label}">${esc(f.quote)}</mark>`); });
+  i.fields.filter((f) => f.status === 'traced').forEach((f) => { body = body.replace(esc(f.quote), () => `<mark title="${f.label}">${esc(f.quote)}</mark>`); });
   const d = i.draft;
   const contractor = d && register.contractors.find((c) => c.id === d.contractor);
   const editable = i.status === 'draft';
