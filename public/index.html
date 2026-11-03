@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>work-order-agent</title>
+<style>
+  :root { --bg:#f7f7f5; --card:#fff; --ink:#1c1c1a; --muted:#6b6b66; --line:#e4e4df; --hl:#fff1b8;
+          --ok:#1f7a4d; --ok-bg:#e3f4ea; --bad:#b42318; --bad-bg:#fde8e6; --warn:#8a5a00; --warn-bg:#fdf1d8; --info:#1d4ed8; --info-bg:#e5edff; }
+  * { box-sizing:border-box }
+  body { margin:0; font:14px/1.5 system-ui, -apple-system, sans-serif; background:var(--bg); color:var(--ink) }
+  header { display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:14px 20px; border-bottom:1px solid var(--line); background:var(--card) }
+  header h1 { font-size:16px; margin:0 }
+  header .sub { color:var(--muted); flex:1 1 240px }
+  .counts span { margin-left:12px; color:var(--muted) } .counts b { color:var(--ink) }
+  main { display:grid; grid-template-columns:minmax(0,320px) minmax(0,1fr); gap:16px; padding:16px 20px }
+  @media (max-width:860px) { main { grid-template-columns:1fr } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin-bottom:16px; min-width:0 }
+  .card h2 { font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 10px }
+  .item { padding:10px; border-radius:6px; cursor:pointer; border:1px solid transparent }
+  .item:hover { background:#fafaf7 } .item.sel { border-color:var(--ink); background:#fafaf7 }
+  .item .subj { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .item .meta { color:var(--muted); font-size:12px; display:flex; gap:6px; align-items:center; flex-wrap:wrap }
+  .pill { display:inline-block; font-size:11px; font-weight:600; padding:1px 8px; border-radius:99px; white-space:nowrap }
+  .emergency { background:var(--bad-bg); color:var(--bad) } .urgent { background:var(--warn-bg); color:var(--warn) }
+  .routine, .forward, .discarded, .forwarded { background:#eee; color:var(--muted) }
+  .draft { background:var(--info-bg); color:var(--info) } .sent, .scheduled { background:var(--warn-bg); color:var(--warn) } .done { background:var(--ok-bg); color:var(--ok) }
+  .cols { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px }
+  @media (max-width:1100px) { .cols { grid-template-columns:1fr } }
+  .mail { white-space:pre-wrap; background:#fafaf7; border-radius:6px; padding:10px 12px; overflow-wrap:anywhere }
+  mark { background:var(--hl); border-radius:3px }
+  .step { display:grid; grid-template-columns:20px minmax(0,1fr); gap:6px; padding:6px 0; border-top:1px solid var(--line) }
+  .step .m { font-weight:700 } .step.ok .m { color:var(--ok) } .step.fail .m, .step.fail .d { color:var(--bad) }
+  .d { color:var(--muted) }
+  .fl { margin-bottom:10px } .fl label { display:block; font-size:12px; color:var(--muted); margin-bottom:2px }
+  input, select, textarea { font:inherit; border:1px solid var(--line); border-radius:6px; padding:6px 8px; width:100%; background:#fff }
+  button { font:inherit; border:1px solid var(--line); background:var(--card); padding:6px 12px; border-radius:6px; cursor:pointer }
+  button.primary { background:var(--ink); color:#fff; border-color:var(--ink) }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+  .flag { color:var(--bad); background:var(--bad-bg); border-radius:6px; padding:6px 10px; margin-bottom:10px }
+  .err { color:var(--bad) }
+  details summary { cursor:pointer; color:var(--muted) }
+</style>
+</head>
+<body>
+<header>
+  <h1>work-order-agent</h1>
+  <span class="sub">Tenant mail in, draft work order out. Nothing is sent until a person approves.</span>
+  <span class="counts" id="counts"></span>
+</header>
+<main>
+  <div>
+    <div class="card"><h2>Inbox</h2><div id="inbox"></div></div>
+    <div class="card"><details><summary>Send a test mail</summary>
+      <form id="compose" style="margin-top:10px">
+        <div class="fl"><label>From</label><select name="from" id="fromSel"></select></div>
+        <div class="fl"><label>Subject</label><input name="subject"></div>
+        <div class="fl"><label>Message</label><textarea name="body" rows="4" required></textarea></div>
+        <button class="primary">Send to the agent</button>
+      </form></details></div>
+  </div>
+  <div id="detail"></div>
+</main>
+<script>
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const api = async (path, body) => {
+  const res = await fetch(path, body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {});
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error);
+  return data;
+};
+const STATUS = { draft: 'draft', sent: 'sent', scheduled: 'scheduled', done: 'done', discarded: 'discarded', forward: 'to forward', forwarded: 'forwarded' };
+const pill = (cls, text) => `<span class="pill ${cls}">${esc(text)}</span>`;
+let register, items = [], selected = null;
+
+function renderInbox() {
+  const n = (s) => items.filter((i) => i.status === s).length;
+  document.getElementById('counts').innerHTML = ['draft', 'sent', 'scheduled', 'done'].map((s) => `<span><b>${n(s)}</b> ${STATUS[s]}</span>`).join('');
+  document.getElementById('inbox').innerHTML = items.map((i) => `
+    <div class="item ${i.mail.id === selected ? 'sel' : ''}" data-id="${i.mail.id}">
+      <div class="subj">${esc(i.mail.subject || '(no subject)')}</div>
+      <div class="meta">${i.draft ? pill(i.draft.urgency, i.draft.urgency) : ''}${pill(i.status, STATUS[i.status])}${i.draft?.flags.length ? pill('emergency', 'check') : ''}<span>${esc(i.mail.from)}</span></div>
+    </div>`).join('');
+  document.querySelectorAll('.item').forEach((el) => el.onclick = () => { selected = el.dataset.id; render(); });
+}
+
+function renderDetail() {
+  const i = items.find((x) => x.mail.id === selected);
+  const $d = document.getElementById('detail');
+  if (!i) { $d.innerHTML = ''; return; }
+  let body = esc(`${i.mail.subject}\n\n${i.mail.body}`);
+  i.fields.filter((f) => f.status === 'traced').forEach((f) => { body = body.replace(esc(f.quote), `<mark title="${f.label}">${esc(f.quote)}</mark>`); });
+  const d = i.draft;
+  const contractor = d && register.contractors.find((c) => c.id === d.contractor);
+  const editable = i.status === 'draft';
+  const opt = (list, val, label) => list.map((x) => `<option value="${x.id}" ${x.id === val ? 'selected' : ''}>${esc(label(x))}</option>`).join('');
+  const unitLabel = (u) => `${register.properties.find((p) => p.id === u.property).name}, unit ${u.unit} (${u.tenant})`;
+  const draftCard = !d ? `<div class="card"><h2>Route</h2><p>Not a repair. Forward to the property manager.</p>
+      ${i.status === 'forward' ? '<button class="primary" data-a="done">Forward</button>' : pill(i.status, STATUS[i.status])}</div>` : `
+    <div class="card"><h2>Work order ${pill(i.status, STATUS[i.status])}</h2>
+      ${editable ? d.flags.map((f) => `<div class="flag">Check: ${esc(f)}</div>`).join('') : ''}
+      <div class="fl"><label>Location</label>${editable && d.location.startsWith('unknown')
+        ? `<select id="e-unit"><option value="">Choose the unit…</option>${opt(register.units, null, unitLabel)}</select>` : `<div>${esc(d.location)}</div>`}</div>
+      <div class="fl"><label>Contractor</label>${editable ? `<select id="e-contractor">${opt(register.contractors, d.contractor, (c) => `${c.name} (${c.trade})`)}</select>` : `<div>${esc(contractor.name)}</div>`}</div>
+      <div class="fl"><label>Urgency · due</label>${editable ? `<select id="e-urgency">${['emergency', 'urgent', 'routine'].map((u) => `<option ${u === d.urgency ? 'selected' : ''}>${u}</option>`).join('')}</select>` : ''}
+        <div class="d">${pill(d.urgency, d.urgency)} due ${new Date(d.due).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}</div></div>
+      <div class="fl"><label>Job description</label>${editable ? `<textarea id="e-description" rows="2">${esc(d.description)}</textarea>` : `<div>${esc(d.description)}</div>`}</div>
+      <div class="fl"><label>Reply to ${esc(i.mail.from)}</label>${editable ? `<textarea id="e-tenantReply" rows="4">${esc(d.tenantReply)}</textarea>` : `<div class="mail">${esc(d.tenantReply)}</div>`}</div>
+      <div class="row">${{ draft: '<button class="primary" data-a="approve">Approve and send</button><button data-a="discard">Discard</button>',
+        sent: '<button data-a="schedule">Contractor scheduled</button>', scheduled: '<button data-a="complete">Mark done</button>' }[i.status] ?? ''}</div>
+      <p class="err" id="err"></p>
+    </div>`;
+  $d.innerHTML = `<div class="cols">
+    <div>
+      <div class="card"><h2>Mail from ${esc(i.mail.from)}</h2><div class="mail">${body}</div></div>
+      <div class="card"><h2>What the agent did</h2>${i.steps.map((s) => `<div class="step ${s.ok ? 'ok' : 'fail'}"><span class="m">${s.ok ? '✓' : '!'}</span><div><b>${esc(s.name)}</b><div class="d">${esc(s.detail)}</div></div></div>`).join('')}</div>
+    </div>
+    <div>${draftCard}<div class="card"><h2>Timeline</h2>${i.timeline.map((t) => `<div class="step"><span class="d">·</span><div>${esc(t.text)}<div class="d">${new Date(t.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div></div></div>`).join('')}</div></div>
+  </div>`;
+  $d.querySelectorAll('[data-a]').forEach((b) => b.onclick = async () => {
+    const edits = {};
+    if (b.dataset.a === 'approve') for (const k of ['unit', 'contractor', 'urgency', 'description', 'tenantReply']) {
+      const el = document.getElementById(`e-${k}`);
+      if (el && el.value) edits[k] = el.value;
+    }
+    try { await api(`/api/items/${i.mail.id}/${b.dataset.a}`, { edits }); await load(); }
+    catch (e) { document.getElementById('err').textContent = e.message; }
+  });
+}
+
+function render() { renderInbox(); renderDetail(); }
+async function load() { items = await api('/api/items'); render(); }
+
+document.getElementById('compose').onsubmit = async (e) => {
+  e.preventDefault();
+  const item = await api('/api/mail', Object.fromEntries(new FormData(e.target)));
+  e.target.reset();
+  selected = item.mail.id;
+  await load();
+};
+
+(async () => {
+  register = await api('/api/register');
+  document.getElementById('fromSel').innerHTML = register.units.map((u) => `<option>${esc(u.contact)}</option>`).join('') + '<option>someone@unknown.example</option>';
+  await load();
+  selected = items[0]?.mail.id;
+  render();
+})();
+</script>
+</body>
+</html>

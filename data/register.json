@@ -1,0 +1,21 @@
+{
+  "_note": "Synthetic data. Every property, person, company and address is made up.",
+  "properties": [
+    { "id": "canal", "name": "22 Canal Street", "city": "London E2 8QR" },
+    { "id": "mill", "name": "Millbrook House", "city": "London N1 7GU" }
+  ],
+  "units": [
+    { "id": "canal-4b", "property": "canal", "unit": "4B", "tenant": "Copperleaf Coffee Ltd", "contact": "maja@copperleaf.example" },
+    { "id": "canal-2a", "property": "canal", "unit": "2A", "tenant": "Ruth Adeyemi", "contact": "ruth.adeyemi@example.com" },
+    { "id": "canal-5c", "property": "canal", "unit": "5C", "tenant": "Leo Fischer", "contact": "leo.fischer@example.com" },
+    { "id": "mill-12", "property": "mill", "unit": "12", "tenant": "Hana Sato", "contact": "hana.sato@example.com" },
+    { "id": "mill-7", "property": "mill", "unit": "7", "tenant": "Owen Price", "contact": "owen.price@example.com" }
+  ],
+  "contractors": [
+    { "id": "flowfix", "name": "Flowfix Plumbing", "trade": "plumbing", "email": "jobs@flowfix.example" },
+    { "id": "warmline", "name": "Warmline Heating", "trade": "heating", "email": "service@warmline.example" },
+    { "id": "brightspark", "name": "Brightspark Electrical", "trade": "electrical", "email": "ops@brightspark.example" },
+    { "id": "keystone", "name": "Keystone Locksmiths", "trade": "locks", "email": "call@keystone.example" },
+    { "id": "allfix", "name": "Allfix Maintenance", "trade": "general", "email": "desk@allfix.example" }
+  ]
+}

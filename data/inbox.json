@@ -1,0 +1,44 @@
+[
+  {
+    "id": "m1",
+    "from": "ruth.adeyemi@example.com",
+    "subject": "Water coming through the ceiling!!",
+    "body": "Hi,\n\nThere is water leaking through the bathroom ceiling in flat 2A, it started an hour ago and it's getting worse. I've put a bucket down but it's dripping onto the light fitting.\n\nPlease send someone today.\n\nRuth"
+  },
+  {
+    "id": "m7",
+    "from": "j.whitmore@example.net",
+    "subject": "Smell of gas",
+    "body": "Hello, I was visiting a friend at Millbrook House this evening and there is a strong smell of gas on the landing outside flat 7. I don't live there but thought someone should know.\n\nJames Whitmore"
+  },
+  {
+    "id": "m2",
+    "from": "hana.sato@example.com",
+    "subject": "Heating",
+    "body": "Hello,\n\nThe radiators in my flat (unit 12) have been cold since Sunday. The boiler shows error code F28. It's getting quite cold at night.\n\nThanks,\nHana Sato"
+  },
+  {
+    "id": "m3",
+    "from": "leo.fischer@example.com",
+    "subject": "Kitchen tap",
+    "body": "Hi there, the kitchen tap in 5C drips constantly, even when fully closed. Not urgent, but it's wasting water. Any day next week works for me.\n\nLeo"
+  },
+  {
+    "id": "m4",
+    "from": "owen.price@example.com",
+    "subject": "Question about my rent",
+    "body": "Hi, can you confirm the new monthly rent after the April review? I want to update my standing order.\n\nOwen Price, flat 7"
+  },
+  {
+    "id": "m5",
+    "from": "maja@copperleaf.example",
+    "subject": "Shop front door won't lock",
+    "body": "Good morning,\n\nThe front door lock at our cafe in unit 4B is broken - the key turns but the bolt doesn't move. We can't secure the premises tonight.\n\nMaja Lindqvist\nCopperleaf Coffee"
+  },
+  {
+    "id": "m6",
+    "from": "hana.sato@example.com",
+    "subject": "Light in hallway",
+    "body": "Hi, the ceiling light in my hallway flickers and then switches off. Changed the bulb, same problem. Unit 12.\n\nHana"
+  }
+]

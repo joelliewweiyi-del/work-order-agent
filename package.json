@@ -1,0 +1,15 @@
+{
+  "name": "work-order-agent",
+  "version": "0.1.0",
+  "description": "Turns tenant mail into work orders: classify, extract the unit, issue and urgency with quotes, pick a contractor, draft the order. A person approves before anything is sent.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "doc-trace": "file:../doc-trace"
+  }
+}
