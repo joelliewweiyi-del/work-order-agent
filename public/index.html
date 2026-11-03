@@ -79,7 +79,7 @@ function renderInbox() {
   document.getElementById('inbox').innerHTML = items.map((i) => `
     <div class="item ${i.mail.id === selected ? 'sel' : ''}" data-id="${i.mail.id}">
       <div class="subj">${esc(i.mail.subject || '(no subject)')}</div>
-      <div class="meta">${i.draft ? pill(i.draft.urgency, i.draft.urgency) : ''}${pill(i.status, STATUS[i.status])}${i.draft?.flags.length ? pill('emergency', 'check') : ''}<span>${esc(i.mail.from)}</span></div>
+      <div class="meta">${i.draft ? pill(i.draft.urgency, i.draft.urgency) : ''}${pill(i.status, STATUS[i.status])}${i.status === 'draft' && i.draft.flags.length ? pill('emergency', 'check') : ''}<span>${esc(i.mail.from)}</span></div>
     </div>`).join('');
   document.querySelectorAll('.item').forEach((el) => el.onclick = () => { selected = el.dataset.id; render(); });
 }
@@ -117,6 +117,7 @@ function renderDetail() {
     </div>
     <div>${draftCard}<div class="card"><h2>Timeline</h2>${i.timeline.map((t) => `<div class="step"><span class="d">·</span><div>${esc(t.text)}<div class="d">${new Date(t.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div></div></div>`).join('')}</div></div>
   </div>`;
+  document.getElementById('e-unit')?.addEventListener('change', () => { document.getElementById('err').textContent = ''; });
   $d.querySelectorAll('[data-a]').forEach((b) => b.onclick = async () => {
     const edits = {};
     if (b.dataset.a === 'approve') for (const k of ['unit', 'contractor', 'urgency', 'description', 'tenantReply']) {
