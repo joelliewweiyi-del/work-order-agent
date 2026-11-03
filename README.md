@@ -75,11 +75,30 @@ npm test
 
 The tests cover triage of every sample mail, the urgency edge cases, a unit the model invents, a unit that disagrees with the sender, an unknown sender, and the status rules (no approval without a unit, a refused approval changes nothing).
 
+## Design decisions
+
+| Decision | Alternative I rejected | Why |
+|---|---|---|
+| The sender's address decides the unit | Trust the unit named in the mail | Tenants mention neighbours' flats, and models misread numbers. The tenant register is the source of truth, and the mail can only agree with it. |
+| The agent drafts; a person sends | Send emergencies automatically | A wrong contractor at 2 a.m. costs more than a minute of review. The draft is ready, so approving takes seconds. |
+| Every step is logged in plain words | A single "confidence" label | The property manager sees why a draft was flagged ("sender rents 5C, mail says 2A") and fixes exactly that. |
+| Deadlines come from a fixed table per urgency | Let the model pick a deadline | Service levels are a contract with tenants. They belong in configuration, not in a prompt. |
+| Non-repair mail is routed, not answered | Let the agent reply to everything | A rent question needs someone who knows the lease. Routing it is the useful action. |
+| Status moves only along a fixed path | Free-form status updates | Draft → sent → scheduled → done. A job can't be marked done before it was sent, and a refused approval changes nothing. |
+
 ## Limits
 
 - No real mail connection. Mail comes from `data/inbox.json` or the test form.
 - State is in memory. Restarting resets the demo.
 - Every person, company and address here is made up.
+
+## What's next
+
+- **A real mailbox.** IMAP or Microsoft Graph in, with the same pipeline.
+- **Contractor replies.** Read the contractor's mail and move the job to scheduled or done, with the quote as evidence.
+- **Photos.** Tenants send photos of leaks. A vision model describes them, quoted like any other field.
+- **An evaluation set.** A few hundred realistic mails with expected trade, urgency and unit, and a confusion matrix per release.
+- **More languages.** Dutch first: most tenant mail in the Netherlands isn't in English.
 
 ## License
 
