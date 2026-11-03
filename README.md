@@ -25,6 +25,8 @@ Non-repair mail, like a rent question, is routed to the property manager without
 
 ## Run it
 
+Needs Node.js 22 or later.
+
 ```sh
 npm install
 npm start          # http://localhost:3000
