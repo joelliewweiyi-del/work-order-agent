@@ -10,6 +10,6 @@
   },
   "engines": { "node": ">=20" },
   "dependencies": {
-    "doc-trace": "file:../doc-trace"
+    "doc-trace": "github:joelliewweiyi-del/doc-trace"
   }
 }
