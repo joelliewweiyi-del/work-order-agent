@@ -64,7 +64,8 @@ src/rules.js   offline triage: trade, urgency, unit, each with its sentence
 src/llm.js     LLM triage (OpenAI-compatible, Grok by default)
 src/agent.js   the pipeline and its step log
 src/store.js   statuses and what a person can do from each
-data/          the made-up register (units, tenants, contractors) and inbox
+data/          the made-up register (units, tenants, contractors), inbox and eval set
+scripts/eval.js  scores triage against data/eval.json
 ```
 
 ## Tests
@@ -74,6 +75,26 @@ npm test
 ```
 
 The tests cover triage of every sample mail, the urgency edge cases, a unit the model invents, a unit that disagrees with the sender, an unknown sender, and the status rules (no approval without a unit, a refused approval changes nothing).
+
+## Evaluation
+
+`data/eval.json` holds 14 hand-labelled mails: the 7 in the inbox and 7 harder ones (a mail that says "not urgent" about water through a light fitting, a rent question and a lockout in one mail, a sparking socket). Each has the expected kind, trade, urgency and unit.
+
+```sh
+npm run eval              # offline rules
+npm run eval -- --llm     # with a model (key as above)
+```
+
+Run on 3 Nov 2026:
+
+| Triage | Fully right | Kind | Trade | Urgency | Unit |
+|---|---|---|---|---|---|
+| Offline rules | 10/14 | 93% | 86% | 79% | 100% |
+| Grok 4.7 (via OpenRouter) | 13/14 | 100% | 100% | 93% | 100% |
+
+The rules miss a lockout and a sparking socket as emergencies, and read mice as admin. The model's one miss: it called the mice routine where the label says urgent. The unit stays at 100% in both because the sender's address decides it. This eval found one bug before it shipped: the model returned the unit as "flat 2A", which the agent then compared to "2A". Unit labels are now stripped before the comparison (test in `test/agent.test.js`).
+
+Fourteen mails is a smoke test, not a benchmark.
 
 ## Design decisions
 
@@ -97,7 +118,7 @@ The tests cover triage of every sample mail, the urgency edge cases, a unit the 
 - **A real mailbox.** IMAP or Microsoft Graph in, with the same pipeline.
 - **Contractor replies.** Read the contractor's mail and move the job to scheduled or done, with the quote as evidence.
 - **Photos.** Tenants send photos of leaks. A vision model describes them, quoted like any other field.
-- **An evaluation set.** A few hundred realistic mails with expected trade, urgency and unit, and a confusion matrix per release.
+- **A bigger evaluation set.** A few hundred realistic mails instead of 14, and a confusion matrix per release.
 - **More languages.** Dutch first: most tenant mail in the Netherlands isn't in English.
 
 ## License

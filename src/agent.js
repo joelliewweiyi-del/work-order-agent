@@ -29,10 +29,12 @@ export async function runAgent(mail, register, { extractor = 'auto', env = proce
 
   // 3. Who is this? The sender's address decides. A unit named in the mail must agree with it.
   const bySender = register.units.find((u) => u.contact.toLowerCase() === mail.from.toLowerCase());
-  const named = value('unit');
+  // "flat 2A", "Unit 2A" and "apt. 2a" all name unit 2A.
+  const unitId = (s) => s.replace(/^\s*(flat|unit|apartment|apt\.?)\s+/i, '').replace(/[^a-z0-9]/gi, '').toUpperCase();
+  const named = value('unit') && unitId(value('unit'));
   let unit = bySender;
   if (!bySender) step('Match the sender to a unit', false, `${mail.from} is not a known tenant contact`);
-  else if (named && named.toUpperCase() !== bySender.unit.toUpperCase()) {
+  else if (named && named !== unitId(bySender.unit)) {
     unit = null;
     step('Match the sender to a unit', false, `sender rents unit ${bySender.unit}, the mail says unit ${named}`);
   } else {

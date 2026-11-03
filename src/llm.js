@@ -15,6 +15,7 @@ export function buildPrompt(mail) {
     'urgent: needs a visit within a day (no heating, no hot water). routine: everything else.',
     '`value` must be copied exactly from the mail. `quote` is the exact sentence that contains it.',
     'For "issue", the value is the sentence describing the problem. For "urgency", the words that show it.',
+    'For "unit", the value is the unit identifier only, as written (for example 2A or 12), without words like flat or unit.',
     'Use null for anything the mail does not say. Never guess a unit.',
     '',
     `Subject: ${mail.subject}`,

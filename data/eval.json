@@ -1,0 +1,19 @@
+{
+  "_note": "Hand-labelled. expected = [kind, trade, urgency, unit]; unit is the unit the agent should end on (null when it must be set by a person). The m* mails are data/inbox.json; the h* mails are harder on purpose. Synthetic data.",
+  "cases": [
+    { "id": "m1", "expected": ["work-order", "plumbing", "emergency", "2A"] },
+    { "id": "m7", "expected": ["work-order", "heating", "emergency", null] },
+    { "id": "m2", "expected": ["work-order", "heating", "urgent", "12"] },
+    { "id": "m3", "expected": ["work-order", "plumbing", "routine", "5C"] },
+    { "id": "m4", "expected": ["forward", null, null, "7"] },
+    { "id": "m5", "expected": ["work-order", "locks", "emergency", "4B"] },
+    { "id": "m6", "expected": ["work-order", "electrical", "routine", "12"] },
+    { "id": "h1", "from": "hana.sato@example.com", "subject": "Boiler", "body": "There's a loud banging from the boiler cupboard and since this morning there is no hot water at all.", "expected": ["work-order", "heating", "urgent", "12"] },
+    { "id": "h2", "from": "leo.fischer@example.com", "subject": "Kitchen", "body": "Not urgent I guess, but water is now dripping through the light in the kitchen ceiling.", "expected": ["work-order", "plumbing", "emergency", "5C"] },
+    { "id": "h3", "from": "owen.price@example.com", "subject": "Two things", "body": "My rent payment bounced, I'll sort that. Bigger problem: the front door key snapped in the lock and I can't get in.", "expected": ["work-order", "locks", "emergency", "7"] },
+    { "id": "h4", "from": "ruth.adeyemi@example.com", "subject": "Fan", "body": "Hi, the extractor fan in the bathroom stopped working last week.", "expected": ["work-order", "electrical", "routine", "2A"] },
+    { "id": "h5", "from": "maja@copperleaf.example", "subject": "Socket", "body": "The double socket behind our counter is sparking when we plug anything in. We've switched it off at the fuse box.", "expected": ["work-order", "electrical", "emergency", "4B"] },
+    { "id": "h6", "from": "hana.sato@example.com", "subject": "Insurance", "body": "Has the building insurance been renewed this year? My lease says the landlord provides it.", "expected": ["forward", null, null, "12"] },
+    { "id": "h7", "from": "leo.fischer@example.com", "subject": "Mice", "body": "Mice in the kitchen again, we saw two last night behind the fridge.", "expected": ["work-order", "general", "urgent", "5C"] }
+  ]
+}

@@ -76,3 +76,17 @@ test('a trade name that only exists on Object.prototype is not a trade', async (
   assert.equal(r.draft.trade, 'general');
   assert.equal(r.draft.contractor, 'allfix');
 });
+
+// Found with real Grok 4.7 on 3 Nov 2026: it quotes the unit as "flat 2A" or "Unit 12".
+test('a unit named with its label ("flat 2A", "Unit 12") still matches the sender\'s unit', async () => {
+  for (const value of ['flat 2A', 'Unit 2A', 'apt. 2a', '2A']) {
+    const says = async () => ({ ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ isWorkOrder: true, trade: 'plumbing', urgency: 'emergency', fields: [
+      { key: 'unit', value, quote: `Water is leaking in ${value}.` },
+      { key: 'issue', value: `Water is leaking in ${value}.`, quote: `Water is leaking in ${value}.` },
+    ] }) } }] }) });
+    const r = await runAgent({ id: 'u', from: 'ruth.adeyemi@example.com', subject: 'Leak', body: `Water is leaking in ${value}.` },
+      register, { env: { XAI_API_KEY: 'k' }, fetchFn: says, now: NOW });
+    assert.equal(r.unit?.unit, '2A', value);
+    assert.deepEqual(r.draft.flags, [], value);
+  }
+});
